@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Would You Rather</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            transition: justify-content 0.5s;
+        }
+        h1 {
+            margin-bottom: 20px;
+            transition: margin 0.5s;
+        }
+        #buttons, #joinInput {
+            display: none;
+        }
+        #lobby {
+            display: none;
+        }
+        #backButton {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+        }
+        #countdown {
+            font-size: 2em;
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let playerName = '';
+        let isHost = false;
+        let lobbyCode = '';
+
+        function showButtons() {
+            playerName = document.getElementById('playerName').value;
+            if (playerName) {
+                document.getElementById('playerNameDisplay').textContent = `Player: ${playerName}`;
+                document.getElementById('nameInput').style.display = 'none';
+                document.getElementById('buttons').style.display = 'block';
+            }
+        }
+
+        function hostGame() {
+            socket.emit('createLobby', playerName);
+            isHost = true;
+            adjustUIForGame();
+        }
+
+        function showJoinInput() {
+            document.getElementById('joinInput').style.display = 'block';
+        }
+
+        function joinGame() {
+            lobbyCode = document.getElementById('lobbyCodeInput').value;
+            socket.emit('joinLobby', lobbyCode, playerName);
+            document.getElementById('joinInput').style.display = 'none';
+            adjustUIForGame();
+        }
+
+        function adjustUIForGame() {
+            document.querySelector('body').style.justifyContent = 'flex-start';
+            document.querySelector('h1').style.marginTop = '20px';
+            document.getElementById('buttons').style.display = 'none';
+        }
+
+        function goBack() {
+            location.reload();
+        }
+
+        function toggleReady() {
+            socket.emit('toggleReady', lobbyCode, playerName);
+        }
+
+
+         function startGame() {
+            socket.emit('startGame', lobbyCode);
+        }
+
+
+        socket.on('lobbyCreated', (code) => {
+            lobbyCode = code;
+            document.getElementById('lobbyCodeDisplay').textContent = `Lobby Code: ${lobbyCode}`;
+            document.getElementById('lobby').style.display = 'block';
+        });
+
+        socket.on('playerJoined', (data) => {
+            document.getElementById('lobbyCodeDisplay').textContent = `Lobby Code: ${data.lobbyCode}`;
+            const lobbyList = document.getElementById('lobbyList');
+            lobbyList.innerHTML = '';
+            data.players.forEach(player => {
+                const listItem = document.createElement('li');
+                listItem.textContent = player;
+                lobbyList.appendChild(listItem);
+            });
+            document.getElementById('lobby').style.display = 'block';
+        });
+
+        socket.on('updateReadyPlayers', (readyPlayers) => {
+            const lobbyList = document.getElementById('lobbyList');
+            Array.from(lobbyList.children).forEach((li, index) => {
+                if (readyPlayers.includes(li.textContent)) {
+                    li.style.color = 'green';
+                } else {
+                    li.style.color = 'black';
+                }
+            });
+            const readyButton = document.getElementById('readyButton');
+            if (readyPlayers.includes(playerName)) {
+                readyButton.textContent = 'Unready';
+            } else {
+                readyButton.textContent = 'Ready';
+            }
+
+            if (isHost && readyPlayers.length === lobbyList.children.length) {
+                document.getElementById('startGameButton').style.display = 'inline-block';
+            } else {
+                document.getElementById('startGameButton').style.display = 'none';
+            }
+        });
+
+        socket.on('redirectToGame', () => {
+            window.location.href = `/game.html?playerName=${playerName}&lobbyCode=${lobbyCode}`;
+        });
+
+        socket.on('lobbyError', (error) => {
+            alert(error);
+        });
+		socket.on('startCountdown', () => {
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('backButton').style.display = 'none';
+    document.getElementById('countdown').style.display = 'block';
+    let countdown = 3;
+    const interval = setInterval(() => {
+        document.getElementById('countdown').textContent = `Game starting... ${countdown}...`;
+        countdown--;
+        if (countdown < 0) {
+            clearInterval(interval);
+            document.getElementById('countdown').textContent = '';
+        }
+    }, 1000);
+});
+
+    </script>
+</head>
+<body>
+    <h1>Would You Rather</h1>
+    <div id="playerNameDisplay" style="position: fixed; top: 10px; left: 10px;"></div>
+    <div id="lobbyCodeDisplay" style="position: fixed; top: 10px; right: 10px;"></div>
+    <div id="nameInput">
+        <input type="text" id="playerName" placeholder="Enter your name">
+        <button onclick="showButtons()">Submit</button>
+    </div>
+    <div id="buttons">
+        <button onclick="hostGame()">Host</button>
+        <button onclick="showJoinInput()">Join</button>
+    </div>
+    <div id="joinInput">
+        <input type="text" id="lobbyCodeInput" placeholder="Enter Lobby Code">
+        <button onclick="joinGame()">Join Lobby</button>
+    </div>
+    <div id="lobby">
+        <h2>Lobby</h2>
+        <ul id="lobbyList"></ul>
+        <button id="readyButton" onclick="toggleReady()">Ready</button>
+        <button id="startGameButton" style="display: none;" onclick="startGame()">Start Game</button>
+    </div>
+    <button id="backButton" onclick="goBack()">Back</button>
+    <div id="countdown"></div>
+</body>
+</html>

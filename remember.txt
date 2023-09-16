@@ -1,0 +1,1 @@
+The countdown Game starting... 3... 2... 1... missing and should be visible for hoster and joiner. both joiner and hoster loads in to the game. but cant vote or anything.

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
+    <link rel="stylesheet" href="/css/game.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/game.js" defer></script>
+</head>
+<body>
+    <div id="playerList" style="position: fixed; top: 10px; left: 10px;"></div>
+    <div id="gameLobbyCode" style="position: fixed; top: 10px; right: 10px;"></div>
+    <button id="leftChoiceButton">Fly like a bird</button>
+    <button id="rightChoiceButton">Swim like a fish</button>
+
+    <!-- Modal structure -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <p id="resultText"></p>
+            <div class="modal-footer">
+                <button id="playAgainModalBtn" style="display: none;">Play Again</button>
+                <button id="closeModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
